@@ -1,0 +1,65 @@
+import "osl/crypto"
+
+import "net/http"
+import "net/url"
+import "math/rand"
+import "crypto/md5"
+import "errors"
+import "time"
+import "os"
+import "strings"
+import "sync"
+import "context"
+import "bytes"
+import "path"
+import "strconv"
+
+import "github.com/gin-gonic/gin"
+import "github.com/joho/godotenv"
+
+import "./middleware.osl"
+import "./handlers.osl"
+import "./storage.osl"
+import "./utils.osl"
+import "./pages.osl"
+
+import "./originFSKit.go"
+
+object clients = {}
+object sessions = {}
+object failedAttempts = {}
+object lockouts = {}
+
+string dataDir = "/application data/authenticator@rotur"
+
+def main() (
+    string home = os.Getenv("HOME")
+    godotenv.Overload(home ++ "/Documents/.env")
+    godotenv.Load()
+
+    auto r = gin.Default()
+
+    r.LoadHTMLGlob("templates/*")
+    r.Static("/static", "./static")
+
+    r.GET("/", homePage)
+    r.GET("/auth", authPage)
+    r.GET("/unlock", unlockPage)
+    r.GET("/setup", setupPage)
+    r.GET("/logout", handleLogout)
+    r.POST("/logout", handleLogout)
+
+    auto api = r.Group("/api")
+    api.GET("/health", handleHealth)
+    api.GET("/status", handleStatus)
+    api.GET("/verify-params", handleVerifyParams)
+    api.POST("/session", handleSession)
+    api.POST("/setup", handleSetup)
+    api.GET("/check-setup", handleCheckSetup)
+    api.GET("/entries", requireAuth, handleGetEntries)
+    api.POST("/entry", requireAuth, handleAddEntry)
+    api.GET("/size", requireAuth, handleGetSize)
+    api.DELETE("/entry", requireAuth, handleDeleteEntry)
+
+    r.Run(":5619")
+)

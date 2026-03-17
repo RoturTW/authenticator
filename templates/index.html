@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>roturAuth</title>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="/" class="logo">
+          <i data-lucide="shield-check"></i>
+          <span>roturAuth</span>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="codes">
+          <i data-lucide="key-round"></i>
+          <span>Codes</span>
+        </button>
+        <button class="nav-item" data-view="export">
+          <i data-lucide="download"></i>
+          <span>Export</span>
+        </button>
+      </nav>
+
+<div class="sidebar-footer">
+    <div class="sidebar-stats">
+      <div class="sidebar-stat">
+        <i data-lucide="hard-drive"></i>
+        <span id="sidebar-drive-size">0 KB</span>
+      </div>
+    </div>
+    <div class="user-menu-wrapper">
+      <button id="user-menu-btn" class="user-info">
+        <img id="avatar" src="https://avatars.rotur.dev/default" alt="Avatar">
+        <div class="user-details">
+          <span id="username" class="username">User</span>
+        </div>
+      </button>
+      <div id="user-dropdown" class="user-dropdown">
+        <button id="logout-btn" class="dropdown-item">
+          <i data-lucide="log-out"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="mobile-header">
+        <h1 class="mobile-logo">roturAuth</h1>
+        <span id="code-count" class="code-count">0 codes</span>
+      </header>
+
+      <div id="codes-view" class="view active">
+        <div class="view-header">
+          <h1>Authenticator Codes</h1>
+          <div class="view-actions">
+            <button id="add-btn" class="btn primary">
+              <i data-lucide="plus"></i>
+              Add Code
+            </button>
+          </div>
+        </div>
+
+        <div class="search-bar">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="text" id="search-input" placeholder="Search accounts...">
+        </div>
+
+        <div id="codes-list" class="codes-grid"></div>
+
+        <div id="empty-state" class="empty-state" style="display: none;">
+          <div class="empty-icon">
+            <i data-lucide="key-round"></i>
+          </div>
+          <h3>No codes yet</h3>
+          <p>Add your first authenticator code</p>
+          <button class="btn primary" onclick="document.getElementById('add-btn').click()">
+            <i data-lucide="plus"></i>
+            Add Your First Code
+          </button>
+        </div>
+      </div>
+
+      <div id="export-view" class="view">
+        <div class="view-header">
+          <h1>Export & Backup</h1>
+        </div>
+
+        <div class="export-section">
+          <div class="export-card">
+            <div class="export-icon">
+              <i data-lucide="download"></i>
+            </div>
+            <h3>Export Backup</h3>
+            <p>Download an encrypted backup of your authenticator codes</p>
+            <button id="export-btn" class="btn primary">
+              <i data-lucide="download"></i>
+              Download Backup
+            </button>
+          </div>
+
+          <div class="export-card">
+            <div class="export-icon">
+              <i data-lucide="upload"></i>
+            </div>
+            <h3>Import Backup</h3>
+            <p>Restore codes from a backup file</p>
+            <input type="file" id="import-file" accept=".json" style="display: none;">
+            <button id="import-btn" class="btn secondary">
+              <i data-lucide="upload"></i>
+              Import Backup
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <nav class="mobile-nav">
+    <button class="mobile-nav-item active" data-view="codes">
+      <i data-lucide="key-round"></i>
+      <span>Codes</span>
+    </button>
+    <button class="mobile-nav-item" data-view="export">
+      <i data-lucide="download"></i>
+      <span>Export</span>
+    </button>
+    <button class="mobile-nav-item" id="profile-nav-btn">
+      <img id="mobile-avatar" src="https://avatars.rotur.dev/default" alt="Avatar">
+      <span>Profile</span>
+    </button>
+  </nav>
+
+  <div class="mobile-search-bar">
+    <i data-lucide="search" class="search-icon"></i>
+    <input type="text" id="mobile-search-input" placeholder="Search accounts...">
+  </div>
+
+  <button id="mobile-add-btn" class="mobile-fab">
+    <i data-lucide="plus"></i>
+  </button>
+
+  <div id="profile-modal" class="modal">
+    <div class="modal-content profile-modal-content">
+      <div class="modal-header">
+        <h2>Profile</h2>
+        <button class="close-btn" id="close-profile-modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="profile-avatar">
+          <img id="profile-avatar-img" src="https://avatars.rotur.dev/default" alt="Avatar">
+        </div>
+        <div class="profile-info">
+          <span id="profile-username" class="profile-username">User</span>
+        </div>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <i data-lucide="hard-drive"></i>
+            <div class="stat-info">
+              <span class="stat-label">Drive Storage</span>
+              <span id="drive-size" class="stat-value">0 KB</span>
+            </div>
+          </div>
+          <div class="profile-stat">
+            <i data-lucide="key-round"></i>
+            <div class="stat-info">
+              <span class="stat-label">Total Codes</span>
+              <span id="total-codes" class="stat-value">0</span>
+            </div>
+          </div>
+        </div>
+        <button id="profile-logout-btn" class="btn danger">
+          <i data-lucide="log-out"></i>
+          Logout
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="add-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add Authenticator</h2>
+        <button class="close-btn" id="close-modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="tabs">
+          <button class="tab active" data-tab="scan">
+            <i data-lucide="scan-line"></i>
+            Scan QR
+          </button>
+          <button class="tab" data-tab="manual">
+            <i data-lucide="keyboard"></i>
+            Manual
+          </button>
+          <button class="tab" data-tab="import-qr">
+            <i data-lucide="image"></i>
+            Upload QR
+          </button>
+        </div>
+
+        <div id="scan-tab" class="tab-content active">
+          <div id="qr-reader" class="qr-reader"></div>
+          <p class="scan-hint">Position the QR code within the frame</p>
+        </div>
+
+        <div id="manual-tab" class="tab-content" style="display: none;">
+          <div class="form-group">
+            <label for="manual-name">Account Name *</label>
+            <input type="text" id="manual-name" placeholder="e.g., john@example.com">
+          </div>
+          <div class="form-group">
+            <label for="manual-issuer">Issuer</label>
+            <input type="text" id="manual-issuer" placeholder="e.g., Google">
+          </div>
+          <div class="form-group">
+            <label for="manual-secret">Secret Key *</label>
+            <input type="text" id="manual-secret" placeholder="Base32 encoded secret" style="font-family: monospace;">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="manual-digits">Digits</label>
+              <select id="manual-digits">
+                <option value="6">6</option>
+                <option value="8">8</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="manual-algorithm">Algorithm</label>
+              <select id="manual-algorithm">
+                <option value="SHA-1">SHA-1</option>
+                <option value="SHA-256">SHA-256</option>
+                <option value="SHA-512">SHA-512</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="manual-period">Period</label>
+              <input type="number" id="manual-period" value="30" min="15" max="120">
+            </div>
+          </div>
+          <button id="manual-add-btn" class="btn primary">
+            <i data-lucide="plus"></i>
+            Add Code
+          </button>
+        </div>
+
+        <div id="import-qr-tab" class="tab-content" style="display: none;">
+          <input type="file" id="qr-image-file" accept="image/*" style="display: none;">
+          <div class="upload-area" id="qr-upload-area">
+            <i data-lucide="image"></i>
+            <p>Click to upload a QR code image</p>
+            <span>PNG, JPG, GIF supported</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="edit-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Edit Code</h2>
+        <button class="close-btn" id="close-edit-modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="edit-name">Account Name</label>
+          <input type="text" id="edit-name">
+        </div>
+        <div class="form-group">
+          <label for="edit-issuer">Issuer</label>
+          <input type="text" id="edit-issuer">
+        </div>
+        <div class="modal-actions">
+          <button id="delete-code-btn" class="btn danger">
+            <i data-lucide="trash-2"></i>
+            Delete
+          </button>
+          <button id="save-edit-btn" class="btn primary">
+            <i data-lucide="check"></i>
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="code-modal" class="modal">
+    <div class="modal-content code-modal-content">
+      <div class="modal-header">
+        <h2 id="code-modal-title">Code</h2>
+        <button class="close-btn" id="close-code-modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="large-code" id="large-code">------</div>
+        <div class="large-timer">
+          <div class="timer-bar">
+            <div class="timer-bar-fill" id="timer-bar-fill"></div>
+          </div>
+          <span id="large-timer-text">30s</span>
+        </div>
+        <button id="copy-large-code" class="btn primary">
+          <i data-lucide="copy"></i>
+          Copy Code
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.AUTH_CONFIG = {
+      salt: '{{.Salt}}',
+      iterations: {{.Iterations }},
+    entries: {{.Entries }}
+    };
+  </script>
+  <script src="/static/scripts/totp.js"></script>
+  <script src="/static/scripts/app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>roturAuth - Setup</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+</head>
+
+<body class="unlock-body">
+    <div class="unlock-container">
+        <div class="setup-progress" id="setup-progress">
+            <div class="progress-step active" data-step="1">
+                <div class="step-circle">1</div>
+                <span>Create</span>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-step="2">
+                <div class="step-circle">2</div>
+                <span>Confirm</span>
+            </div>
+        </div>
+
+        <div class="unlock-header">
+            <div class="unlock-icon" id="setup-icon">
+                <i data-lucide="shield-plus"></i>
+            </div>
+            <h1 id="setup-title">Create Passcode</h1>
+            <p class="unlock-subtitle" id="setup-subtitle">Choose a 6-digit passcode to secure your authenticator</p>
+        </div>
+
+        <div class="passcode-display" id="passcode-display">
+            <div class="passcode-dot" data-index="0"></div>
+            <div class="passcode-dot" data-index="1"></div>
+            <div class="passcode-dot" data-index="2"></div>
+            <div class="passcode-dot" data-index="3"></div>
+            <div class="passcode-dot" data-index="4"></div>
+            <div class="passcode-dot" data-index="5"></div>
+        </div>
+
+        <div class="error-message" id="error-message" style="display: none;">
+            <i data-lucide="alert-circle"></i>
+            <span id="error-text">Passcodes do not match</span>
+        </div>
+
+        <div class="numpad" id="numpad">
+            <button class="numpad-btn" data-digit="1">1</button>
+            <button class="numpad-btn" data-digit="2">2</button>
+            <button class="numpad-btn" data-digit="3">3</button>
+            <button class="numpad-btn" data-digit="4">4</button>
+            <button class="numpad-btn" data-digit="5">5</button>
+            <button class="numpad-btn" data-digit="6">6</button>
+            <button class="numpad-btn" data-digit="7">7</button>
+            <button class="numpad-btn" data-digit="8">8</button>
+            <button class="numpad-btn" data-digit="9">9</button>
+            <button class="numpad-btn invisible"></button>
+            <button class="numpad-btn" data-digit="0">0</button>
+            <button class="numpad-btn" data-digit="backspace">
+                <i data-lucide="delete"></i>
+            </button>
+        </div>
+
+        <div class="setup-footer">
+            <p class="setup-warning">
+                <i data-lucide="alert-triangle"></i>
+                Remember your passcode! It cannot be recovered.
+            </p>
+        </div>
+    </div>
+
+    <script src="/static/scripts/crypto.js"></script>
+    <script src="/static/scripts/setup.js"></script>
+</body>
+
+</html>

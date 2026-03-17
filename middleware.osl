@@ -1,0 +1,26 @@
+def requireAuth(*gin.Context c) (
+    string token = getCookie(c, "auth_token")
+    if token == "" (
+        c.Redirect(302, "/auth")
+        c.Abort()
+        return
+    )
+
+    string session = getCookie(c, "session_token")
+    if session == "" (
+        c.Redirect(302, "/unlock")
+        c.Abort()
+        return
+    )
+
+    if !validateSession(token, session) (
+        c.SetCookie("session_token", "", -1, "/", "", false, true)
+        c.Redirect(302, "/unlock")
+        c.Abort()
+        return
+    )
+
+    c.Set("auth", token)
+    c.Set("session", session)
+    c.Next()
+)

@@ -1,0 +1,73 @@
+def homePage(*gin.Context c) (
+    string token = getCookie(c, "auth_token")
+    if token == "" (
+        c.Redirect(302, "/auth")
+        return
+    )
+
+    boolean hasStorage = storageExists(token)
+    if !hasStorage (
+        c.Redirect(302, "/setup")
+        return
+    )
+
+    string session = getCookie(c, "session_token")
+    if session == "" or !validateSession(token, session) (
+        c.Redirect(302, "/unlock")
+        return
+    )
+
+    string salt = getSalt(token)
+    number iterations = getIterations(token)
+    array entries = getEntries(token)
+
+    c.HTML(200, "index.html", {
+        Authenticated: true,
+        Unlocked: true,
+        Salt: salt,
+        Iterations: iterations,
+        Entries: entries
+    })
+)
+
+def authPage(*gin.Context c) (
+    c.HTML(200, "auth.html", {})
+)
+
+def unlockPage(*gin.Context c) (
+    string token = getCookie(c, "auth_token")
+    if token == "" (
+        c.Redirect(302, "/auth")
+        return
+    )
+
+    boolean hasStorage = storageExists(token)
+    if !hasStorage (
+        c.Redirect(302, "/setup")
+        return
+    )
+
+    string session = getCookie(c, "session_token")
+    if session != "" and validateSession(token, session) (
+        c.Redirect(302, "/")
+        return
+    )
+
+    c.HTML(200, "unlock.html", { Authenticated: true })
+)
+
+def setupPage(*gin.Context c) (
+    string token = getCookie(c, "auth_token")
+    if token == "" (
+        c.Redirect(302, "/auth")
+        return
+    )
+
+    boolean hasStorage = storageExists(token)
+    if hasStorage (
+        c.Redirect(302, "/")
+        return
+    )
+
+    c.HTML(200, "setup.html", { Authenticated: true })
+)

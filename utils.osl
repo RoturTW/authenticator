@@ -1,0 +1,106 @@
+def getClient(string token) *Client (
+    if clients[token] == null (
+        clients[token] = NewClient(token)
+    )
+    return clients[token].assert(*Client)
+)
+
+def getCookie(*gin.Context c, string name) string (
+    array result = c.Cookie(name).toArray()
+    if result[0] != null (
+        return ""
+    )
+    return result[1].toStr()
+)
+
+def generateSessionToken() string (
+    return crypto.randomBytes(32)
+)
+
+def hashSession(string session) string (
+    return crypto.sha256(session)
+)
+
+def validateSession(string token, string session) boolean (
+    string key = token ++ "_" ++ hashSession(session)
+    if sessions[key] == null (
+        return false
+    )
+
+    object sess = sessions[key].assert(object)
+    number expiry = sess["expiry"].toNum()
+    if expiry < timestamp / 1000 (
+        sessions.delete(key)
+        return false
+    )
+
+    return true
+)
+
+def setSession(string token, string session) (
+    string key = token ++ "_" ++ hashSession(session)
+    number expiry = (timestamp / 1000) + 14400
+    sessions[key] = { expiry: expiry }
+)
+
+def checkRateLimit(string identifier) object (
+    if lockouts[identifier] != null (
+        object lockout = lockouts[identifier].assert(object)
+        number until = lockout["until"].toNum()
+        if (timestamp / 1000) < until (
+            return { locked: true, remaining: until - (timestamp / 1000) }
+        )
+        lockouts.delete(identifier)
+    )
+    return { locked: false }
+)
+
+def recordFailedAttempt(string identifier) (
+    if failedAttempts[identifier] == null (
+        failedAttempts[identifier] = 0
+    )
+    failedAttempts[identifier] = failedAttempts[identifier].toNum() + 1
+
+    if failedAttempts[identifier].toNum() >= 5 (
+        lockouts[identifier] = { until: (timestamp / 1000) + 30 }
+        failedAttempts.delete(identifier)
+    )
+)
+
+def clearFailedAttempts(string identifier) (
+    failedAttempts.delete(identifier)
+)
+
+def getRemainingAttempts(string identifier) number (
+    if failedAttempts[identifier] == null (
+        return 5
+    )
+    return 5 - failedAttempts[identifier].toNum()
+)
+
+def cleanIdentifier(string token) string (
+    if token.len > 16 (
+        return token[:16] ++ "..."
+    )
+    return token
+)
+
+def isValidPasscode(string passcode) boolean (
+    if passcode.len != 6 (
+        return false
+    )
+
+    for i passcode.len (
+        string char = passcode[i].toStr()
+        number ord = char.ord()
+        if ord < 48 or ord > 57 (
+            return false
+        )
+    )
+
+    return true
+)
+
+def deriveKey(string passcode, string salt, number iterations) string (
+    return crypto.pbkdf2(passcode, salt, iterations, 32, "sha256")
+)

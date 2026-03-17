@@ -1,0 +1,132 @@
+def storageExists(string token) boolean (
+    auto client = getClient(token)
+    return client.Exists(dataDir ++ "/data.json")
+)
+
+def readStorage(string token) object (
+    auto client = getClient(token)
+    string path = dataDir ++ "/data.json"
+    
+    if !client.Exists(path) (
+        return {}
+    )
+
+    auto file = client.ReadFileContent(path).toArray()
+    if file[0] != null (
+        return {}
+    )
+
+    string json = file[1].toStr()
+    any parsed = json.JsonParse()
+
+    if typeof(parsed) != "object" (
+        return {}
+    )
+
+    return parsed.assert(object)
+)
+
+def writeStorage(string token, object data) error (
+    auto client = getClient(token)
+    string path = dataDir ++ "/data.json"
+    string json = data.JsonStringify()
+
+    error err = null
+    if client.Exists(path) (
+        err = client.WriteFile(path, json)
+    ) else (
+        err = client.CreateFile(path, json)
+    )
+
+    if err != null (
+        return err
+    )
+
+    client.Commit()
+    return null
+)
+
+def createInitialStorage(string token, string salt, string verifier, number iterations) error (
+    object data = {
+        salt: salt,
+        verifier: verifier,
+        iterations: iterations,
+        entries: []
+    }
+    return writeStorage(token, data)
+)
+
+def getSalt(string token) string (
+    object data = readStorage(token)
+    if data.salt == null (
+        return ""
+    )
+    return data.salt.toStr()
+)
+
+def getVerifier(string token) string (
+    object data = readStorage(token)
+    if data.verifier == null (
+        return ""
+    )
+    return data.verifier.toStr()
+)
+
+def getIterations(string token) number (
+    object data = readStorage(token)
+    if data.iterations == null (
+        return 100000
+    )
+    return data.iterations.toNum()
+)
+
+def getEntries(string token) array (
+    object data = readStorage(token)
+    if data.entries == null (
+        return []
+    )
+    return data.entries.assert(array)
+)
+
+def addEntry(string token, object entry) error (
+    object data = readStorage(token)
+    if data.salt == null (
+        return errors.New("storage not found")
+    )
+
+    array entries = []
+    if data.entries != null (
+        entries = data.entries
+    )
+
+    entries.append(entry)
+    data.entries = entries
+    return writeStorage(token, data)
+)
+
+def deleteEntry(string token, string id) error (
+    object data = readStorage(token)
+    if data.salt == null (
+        return errors.New("storage not found")
+    )
+    if data.entries == null (
+        return errors.New("no entries")
+    )
+
+    array entries = data.entries.assert(array)
+    array newEntries = []
+    
+    for i entries.len (
+        object entry = entries[i].assert(object)
+        if entry.id.toStr() != id (
+            newEntries.append(entry)
+        )
+    )
+
+    data.entries = newEntries
+    return writeStorage(token, data)
+)
+
+def getStorageSize(string token) number (
+    return getEntries(token).toStr().len.toNum()
+)

@@ -1,0 +1,174 @@
+def handleHealth(*gin.Context c) (
+  c.JSON(200, { ok: true })
+)
+
+def handleStatus(*gin.Context c) (
+  string token = getCookie(c, "auth_token")
+  if token == "" (
+    c.JSON(200, { authenticated: false, setup: false })
+    return
+  )
+  boolean hasStorage = storageExists(token)
+  c.JSON(200, { authenticated: true, setup: hasStorage })
+)
+
+def handleCheckSetup(*gin.Context c) (
+  string token = getCookie(c, "auth_token")
+  if token == "" (
+    c.JSON(200, { setup: false })
+    return
+  )
+  boolean hasStorage = storageExists(token)
+  c.JSON(200, { setup: hasStorage })
+)
+
+def handleVerifyParams(*gin.Context c) (
+  string token = getCookie(c, "auth_token")
+  if token == "" (
+    c.JSON(401, { error: "not authenticated" })
+    return
+  )
+
+  if !storageExists(token) (
+    c.JSON(200, { setup: false })
+    return
+  )
+
+  string salt = getSalt(token)
+  string verifier = getVerifier(token)
+  number iterations = getIterations(token)
+
+  c.JSON(200, { salt: salt, verifier: verifier, iterations: iterations })
+)
+
+def handleSession(*gin.Context c) (
+  string token = getCookie(c, "auth_token")
+  if token == "" (
+    c.JSON(401, { ok: false })
+    return
+  )
+
+  string session = generateSessionToken()
+  setSession(token, session)
+  c.SetCookie("session_token", session, 14400, "/", "", false, true)
+  c.JSON(200, { ok: true })
+)
+
+def handleSetup(*gin.Context c) (
+  string token = getCookie(c, "auth_token")
+  if token == "" (
+    c.JSON(401, { ok: false, error: "not authenticated" })
+    return
+  )
+
+  if storageExists(token) (
+    c.JSON(400, { ok: false, error: "already setup" })
+    return
+  )
+
+  object body = {}
+  any err = c.ShouldBindJSON(@body)
+  if err != null (
+    c.JSON(400, { ok: false, error: "invalid request" })
+    return
+  )
+
+  string salt = body.salt.toStr()
+  string verifier = body.verifier.toStr()
+  number iterations = body.iterations.toNum()
+  if iterations == 0 (
+    iterations = 100000
+  )
+
+  if salt == "" or verifier == "" (
+    c.JSON(400, { ok: false, error: "missing salt or verifier" })
+    return
+  )
+
+  err = createInitialStorage(token, salt, verifier, iterations)
+  if err != null (
+    c.JSON(500, { ok: false, error: "failed to create storage" })
+    return
+  )
+
+  string session = generateSessionToken()
+  setSession(token, session)
+  c.SetCookie("session_token", session, 14400, "/", "", false, true)
+
+  c.JSON(200, { ok: true })
+)
+
+def handleGetEntries(*gin.Context c) (
+  string token = c.MustGet("auth").toStr()
+
+  string salt = getSalt(token)
+  if salt == "" (
+    c.JSON(500, { ok: false, error: "storage error" })
+    return
+  )
+
+  number iterations = getIterations(token)
+  array entries = getEntries(token)
+
+  c.JSON(200, { ok: true, salt: salt, iterations: iterations, entries: entries })
+)
+
+def handleAddEntry(*gin.Context c) (
+  string token = c.MustGet("auth").toStr()
+
+  object body = {}
+  any err = c.ShouldBindJSON(@body)
+  if err != null (
+    c.JSON(400, { ok: false, error: "invalid request" })
+    return
+  )
+
+  string id = crypto.uuidv4()
+  if body["id"] != null (
+    id = body["id"].toStr()
+  )
+
+  object entry = {
+    id: id,
+    nonce: body["nonce"].toStr(),
+    ciphertext: body["ciphertext"].toStr()
+  }
+
+  err = addEntry(token, entry)
+  if err != null (
+    c.JSON(500, { ok: false, error: "failed to add entry" })
+    return
+  )
+
+  c.JSON(200, { ok: true, id: id })
+)
+
+def handleDeleteEntry(*gin.Context c) (
+  string token = c.MustGet("auth").toStr()
+
+  string id = c.Query("id")
+  if id == "" (
+    c.JSON(400, { ok: false, error: "missing id" })
+    return
+  )
+
+  any err = deleteEntry(token, id)
+  if err != null (
+    c.JSON(500, { ok: false, error: "failed to delete entry" })
+    return
+  )
+
+  c.JSON(200, { ok: true })
+)
+
+def handleLogout(*gin.Context c) (
+  c.SetCookie("session_token", "", -1, "/", "", false, true)
+  c.SetCookie("auth_token", "", -1, "/", "", false, true)
+  c.Redirect(302, "/")
+)
+
+def handleGetSize(*gin.Context c) (
+  string token = c.MustGet("auth").toStr()
+
+  c.JSON(200, { size: getStorageSize(token) })
+)

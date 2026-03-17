@@ -8,6 +8,11 @@
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <link rel="stylesheet" href="/static/styles.css">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="roturAuth">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 </head>
 
 <body>
@@ -31,28 +36,28 @@
         </button>
       </nav>
 
-<div class="sidebar-footer">
-    <div class="sidebar-stats">
-      <div class="sidebar-stat">
-        <i data-lucide="hard-drive"></i>
-        <span id="sidebar-drive-size">0 KB</span>
-      </div>
-    </div>
-    <div class="user-menu-wrapper">
-      <button id="user-menu-btn" class="user-info">
-        <img id="avatar" src="https://avatars.rotur.dev/default" alt="Avatar">
-        <div class="user-details">
-          <span id="username" class="username">User</span>
+      <div class="sidebar-footer">
+        <div class="sidebar-stats">
+          <div class="sidebar-stat">
+            <i data-lucide="hard-drive"></i>
+            <span id="sidebar-drive-size">0 KB</span>
+          </div>
         </div>
-      </button>
-      <div id="user-dropdown" class="user-dropdown">
-        <button id="logout-btn" class="dropdown-item">
-          <i data-lucide="log-out"></i>
-          <span>Logout</span>
-        </button>
+        <div class="user-menu-wrapper">
+          <button id="user-menu-btn" class="user-info">
+            <img id="avatar" src="https://avatars.rotur.dev/default" alt="Avatar">
+            <div class="user-details">
+              <span id="username" class="username">User</span>
+            </div>
+          </button>
+          <div id="user-dropdown" class="user-dropdown">
+            <button id="logout-btn" class="dropdown-item">
+              <i data-lucide="log-out"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
     </aside>
 
     <main class="main-content">
@@ -330,11 +335,16 @@
     window.AUTH_CONFIG = {
       salt: '{{.Salt}}',
       iterations: {{.Iterations }},
-    entries: {{.Entries }}
+      entries: {{.Entries }}
     };
   </script>
   <script src="/static/scripts/totp.js"></script>
   <script src="/static/scripts/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/sw.js');
+    }
+  </script>
 </body>
 
 </html>

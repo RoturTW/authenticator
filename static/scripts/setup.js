@@ -147,12 +147,12 @@ window.Setup = {
 
             const data = await res.json();
 
-  if (data.ok) {
-    sessionStorage.setItem('derivedKey', this.passcode);
-    sessionStorage.setItem('salt', this.salt);
-    sessionStorage.setItem('iterations', this.iterations);
-    window.location.href = '/';
-  } else {
+            if (data.ok) {
+                sessionStorage.setItem('derivedKey', this.passcode);
+                sessionStorage.setItem('salt', this.salt);
+                sessionStorage.setItem('iterations', this.iterations);
+                window.location.href = '/';
+            } else {
                 textEl.textContent = data.error || 'Setup failed';
                 errorEl.style.display = 'flex';
                 this.passcode = '';

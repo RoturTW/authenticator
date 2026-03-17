@@ -15,7 +15,7 @@ window.Unlock = {
 
     const verifyRes = await fetch('/api/verify-params');
     const verifyData = await verifyRes.json();
-    
+
     if (verifyData.salt) {
       this.salt = verifyData.salt;
       this.iterations = verifyData.iterations || 100000;
@@ -114,15 +114,15 @@ window.Unlock = {
 
       sessionStorage.setItem('derivedKey', this.passcode);
       sessionStorage.setItem('salt', this.salt);
-      sessionStorage.setItem('iterations', this.iterations);
-      
+      sessionStorage.setItem('iterations', this.iterations.toString());
+
       await fetch('/api/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ verified: true })
       });
-      
-      window.location.href = '/';
+
+      window.location.replace('/');
     } catch (e) {
       this.showError('Network error');
       this.passcode = '';

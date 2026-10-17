@@ -1,18 +1,5 @@
 import "osl/crypto"
 
-import "net/http"
-import "net/url"
-import "math/rand"
-import "crypto/md5"
-import "errors"
-import "time"
-import "os"
-import "strings"
-import "sync"
-import "context"
-import "bytes"
-import "path"
-import "strconv"
 
 import "github.com/gin-gonic/gin"
 import "github.com/joho/godotenv"

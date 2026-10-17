@@ -1,10 +1,3 @@
-def getClient(string token) *Client (
-    if clients[token] == null (
-        clients[token] = NewClient(token)
-    )
-    return clients[token].assert(*Client)
-)
-
 def getCookie(*gin.Context c, string name) string (
     array result = c.Cookie(name).toArray()
     if result[0] != null (

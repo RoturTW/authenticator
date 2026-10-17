@@ -1,58 +1,187 @@
+import "osl/requests"
+import "osl/json"
+import "osl/crypto"
+
+number ENTRY_SIZE = 14
+number TYPE = 0
+number NAME = 1
+number LOCATION = 2
+number DATA = 3
+number CREATED = 8
+number EDITED = 9
+number SIZE = 11
+number UUID = 13
+
+string originBase = "https://api.rotur.dev"
+string storageRelativePath = "/application data/authenticator@rotur/data.json"
+string storageDirectory = "/application data/authenticator@rotur"
+
+def originRequest(string token, string method, string endpoint, any body) object (
+    string url = originBase ++ endpoint ++ "?auth=" ++ token
+    if method == "GET" (
+        return requests.get(url)
+    )
+    return requests.Request(method, url, { body: body })
+)
+
+def parseObject(string body) object (
+    object parsed = json.parse(body, { type: "object" }) catch (
+        return {}
+    )
+    return parsed
+)
+
+def pathIndex(string token) object (
+    object response = originRequest(token, "GET", "/files/path-index", null)
+    if response.success != true (
+        return {}
+    )
+    return parseObject(response.body.toStr())
+)
+
+def indexForUser(string token) object (
+    object response = pathIndex(token)
+    if response.index == null (
+        return {}
+    )
+    object result = {
+        username: response.username.toStr(),
+        index: response.index.assert(object)
+    }
+    return result
+)
+
+def fileUuid(string token) string (
+    object info = indexForUser(token)
+    if info.index == null (
+        return ""
+    )
+    string username = info.username.toStr()
+    string wanted = ("origin/(c) users/" ++ username ++ storageRelativePath).toLower()
+    object index = info.index.assert(object)
+    array keys = index.getKeys()
+    for i keys.len (
+        string key = keys[i].toStr().toLower()
+        if key == wanted (
+            return index[keys[i]].toStr()
+        )
+    )
+    return ""
+)
+
+def readEntry(string token, string uuid) array (
+    object response = originRequest(token, "GET", "/files/by-uuid?uuid=" ++ uuid, null)
+    if response.success != true (
+        return []
+    )
+    array entry = json.parse(response.body.toStr(), { type: "array" }) catch (
+        return []
+    )
+    return entry
+)
+
 def storageExists(string token) boolean (
-    auto client = getClient(token)
-    return client.Exists(dataDir ++ "/data.json")
+    return fileUuid(token) != ""
 )
 
 def readStorage(string token) object (
-    auto client = getClient(token)
-    string path = dataDir ++ "/data.json"
-    
-    if !client.Exists(path) (
+    string uuid = fileUuid(token)
+    if uuid == "" (
         return {}
     )
-
-    auto file = client.ReadFileContent(path).toArray()
-    if file[0] != null (
+    array entry = readEntry(token, uuid)
+    if entry.len < ENTRY_SIZE (
         return {}
     )
-
-    string json = file[1].toStr()
-    any parsed = json.JsonParse()
-
+    any parsed = json.parse(entry[DATA].toStr(), { type: "object" }) catch (
+        return {}
+    )
     if typeof(parsed) != "object" (
         return {}
     )
-
     return parsed.assert(object)
 )
 
-def writeStorage(string token, object data) error (
-    auto client = getClient(token)
-    string path = dataDir ++ "/data.json"
-    string json = data.JsonStringify()
-
-    error err = null
-    if client.Exists(path) (
-        err = client.WriteFile(path, json)
-    ) else (
-        err = client.CreateFile(path, json)
-    )
-
-    if err != null (
-        return err
-    )
-
-    client.Commit()
-    return null
+def newUuid(string token, string path) string (
+    return crypto.md5(crypto.randomString(16) ++ token ++ path ++ timestamp.toStr())
 )
 
-def createInitialStorage(string token, string salt, string verifier, number iterations) error (
-    object data = {
-        salt: salt,
-        verifier: verifier,
-        iterations: iterations,
-        entries: []
-    }
+def createEntry(string token, string uuid, array entry) boolean (
+    object response = originRequest(token, "POST", "/files", { updates: [{ command: "UUIDa", uuid: uuid, dta: entry }] })
+    return response.success == true
+)
+
+def ensureFolders(string token, string username) boolean (
+    object info = indexForUser(token)
+    object index = info.index.assert(object)
+    string base = "origin/(c) users/" ++ username
+    array parts = storageDirectory.trim(1, -1).split("/")
+    string built = ""
+
+    for i parts.len (
+        string part = parts[i].toStr()
+        if built == "" (
+            built = part
+        ) else (
+            built = built ++ "/" ++ part
+        )
+        string folderPath = (base ++ "/" ++ built).toLower()
+        string indexKey = folderPath ++ ".folder"
+        if index.contains(indexKey) (
+            continue
+        )
+
+        string location = base
+        if i > 0 (
+            string parent = built.trim(1, built.len - part.len - 1)
+            if parent != "" (
+                location = base ++ "/" ++ parent
+            )
+        )
+        number now = timestamp
+        string uuid = newUuid(token, folderPath)
+        array entry = [
+            ".folder", part, location, [], null, 0, 0, now, now, "", 0, 0, [], uuid
+        ]
+        if !createEntry(token, uuid, entry) (
+            return false
+        )
+        index[indexKey] = uuid
+    )
+    return true
+)
+
+def writeStorage(string token, object data) boolean (
+    object info = indexForUser(token)
+    if info.username == null or info.username.toStr() == "" (
+        return false
+    )
+    string username = info.username.toStr()
+    string body = data.JsonStringify()
+    string uuid = fileUuid(token)
+    number now = timestamp
+
+    if uuid == "" (
+        if !ensureFolders(token, username) (
+            return false
+        )
+        uuid = newUuid(token, storageRelativePath)
+        array entry = [
+            ".json", "data", "origin/(c) users/" ++ username ++ storageDirectory, body, null, 0, 0, now, now, "", body.len, 0, [], uuid
+        ]
+        return createEntry(token, uuid, entry)
+    )
+
+    object response = originRequest(token, "POST", "/files", { updates: [
+        { command: "UUIDr", uuid: uuid, dta: body, idx: DATA + 1 },
+        { command: "UUIDr", uuid: uuid, dta: now, idx: EDITED + 1 },
+        { command: "UUIDr", uuid: uuid, dta: body.len, idx: SIZE + 1 }
+    ] })
+    return response.success == true
+)
+
+def createInitialStorage(string token, string salt, string verifier, number iterations) boolean (
+    object data = { salt: salt, verifier: verifier, iterations: iterations, entries: [] }
     return writeStorage(token, data)
 )
 
@@ -88,42 +217,37 @@ def getEntries(string token) array (
     return data.entries.assert(array)
 )
 
-def addEntry(string token, object entry) error (
+def addEntry(string token, object entry) boolean (
     object data = readStorage(token)
     if data.salt == null (
-        return errors.New("storage not found")
+        return false
     )
-
     array entries = []
     if data.entries != null (
-        entries = data.entries
+        entries = data.entries.assert(array)
     )
-
     entries.append(entry)
     data.entries = entries
     return writeStorage(token, data)
 )
 
-def deleteEntry(string token, string id) error (
+def deleteEntry(string token, string id) boolean (
     object data = readStorage(token)
     if data.salt == null (
-        return errors.New("storage not found")
+        return false
     )
-    if data.entries == null (
-        return errors.New("no entries")
+    array entries = []
+    if data.entries != null (
+        entries = data.entries.assert(array)
     )
-
-    array entries = data.entries.assert(array)
-    array newEntries = []
-    
+    array remaining = []
     for i entries.len (
         object entry = entries[i].assert(object)
         if entry.id.toStr() != id (
-            newEntries.append(entry)
+            remaining.append(entry)
         )
     )
-
-    data.entries = newEntries
+    data.entries = remaining
     return writeStorage(token, data)
 )
 

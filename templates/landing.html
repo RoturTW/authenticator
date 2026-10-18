@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <meta name="referrer" content="no-referrer">
+  <title>roturAuth · Codes that keep you in</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+  <link rel="stylesheet" href="/static/rotur-ui/fonts.css">
+  <link rel="stylesheet" href="/static/rotur-ui/tokens.css">
+  <link rel="stylesheet" href="/static/rotur-ui/base.css">
+  <link rel="stylesheet" href="/static/rotur-ui/components.css">
+  <link rel="stylesheet" href="/static/accent.css">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/scripts/accent.js"></script>
+</head>
+<body>
+  <div class="r-signin">
+    <header class="r-signin__header">
+      <a class="r-brand" href="/"><svg aria-hidden="true"><use href="/static/icons.svg#key-round"/></svg>roturAuth</a>
+      <a href="https://rotur.dev">Made for Rotur</a>
+    </header>
+    <main class="r-signin__main landing">
+      <div class="landing__copy">
+        <h1 class="r-signin__title landing__title">Codes that keep you in.</h1>
+        <p class="r-signin__text">Two-factor codes, locked with a passcode only you know.</p>
+        <div class="r-signin__actions">
+          <button class="r-btn r-btn--primary r-btn--lg" id="sign-in" type="button">Sign in with Rotur</button>
+        </div>
+        <p class="r-signin__note" id="sign-in-note" role="status"></p>
+        <p class="r-signin__error" id="sign-in-error" role="alert" hidden></p>
+      </div>
+      <div class="motif" aria-hidden="true">
+        <svg class="motif__ring" viewBox="0 0 64 64"><circle class="motif__track" cx="32" cy="32" r="28"/><circle class="motif__sweep" cx="32" cy="32" r="28"/></svg>
+        <div class="motif__digits"><b></b><b></b><b></b><b></b><b></b><b></b></div>
+      </div>
+    </main>
+    <footer class="r-signin__footer"><span>roturAuth</span><a href="https://rotur.dev">rotur.dev</a></footer>
+  </div>
+  <script src="/static/scripts/sign-in.js"></script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+import "std:serve"
+
+int tokenMaxAgeMs = 2592000000
+
+def readToken(*serve.Context c) string (
+    return c.cookie("auth_token") ?? ""
+)
+
+def setTokenCookie(*serve.Context c, string token) (
+    c.setCookie("auth_token", token, { maxAge: tokenMaxAgeMs, secure: true, httpOnly: true, sameSite: "lax" })
+)
+
+def requireToken(*serve.Context c) (
+    string token = readToken(c)
+    if token == "" (
+        c.json(401, { ok: false, error: "You're signed out. Sign in again." })
+        c.abort()
+        return
+    )
+    c.set("token", token)
+    c.next()
+)
+
+def homePage(*serve.Context c) (
+    string token = readToken(c)
+    if token == "" (
+        c.render("landing", {})
+        return
+    )
+    // Older versions set this cookie from JavaScript; set it again so scripts can't read it.
+    setTokenCookie(c, token)
+    c.clearCookie("username")
+    object user = lookupUser(token)
+    c.render("app", { username: (user.username ?? "").toStr() })
+)
+
+def redirectHome(*serve.Context c) (
+    c.redirect(302, "/")
+)
+
+def authPage(*serve.Context c) (
+    if readToken(c) != "" (
+        c.redirect(302, "/")
+        return
+    )
+    c.render("landing", {})
+)
+
+def refusedMessage(int status) string (
+    if status == 401 or status == 403 (
+        return "Rotur didn't let roturAuth use your files. Sign in again and allow it."
+    )
+    return "Rotur didn't answer. Try again in a moment."
+)
+
+def handleAuth(*serve.Context c) (
+    object body = c.bodyJSON() catch (
+        c.json(400, { ok: false, error: "The sign-in didn't include a token." })
+        return
+    )
+    string token = (body.token ?? "").toStr()
+    if token == "" (
+        c.json(400, { ok: false, error: "The sign-in didn't include a token." })
+        return
+    )
+    object user = lookupUser(token)
+    if user.ok != true (
+        c.json(401, { ok: false, error: refusedMessage((user.status ?? 0).toNum().as<int>) })
+        return
+    )
+    setTokenCookie(c, token)
+    c.json(200, { ok: true, username: user.username })
+)
+
+def handleLogout(*serve.Context c) (
+    string token = readToken(c)
+    if token != "" (
+        forgetUsername(token)
+    )
+    c.clearCookie("auth_token")
+    c.json(200, { ok: true })
+)
+
+def answerFailure(*serve.Context c, object result) (
+    int status = (result.status ?? 0).toNum().as<int>
+    if status == 401 or status == 403 (
+        c.json(401, { ok: false, error: refusedMessage(status) })
+        return
+    )
+    if status == 400 (
+        c.json(400, { ok: false, error: result.error.toStr() })
+        return
+    )
+    c.json(502, { ok: false, error: (result.error ?? "Rotur's files didn't answer. Try again in a moment.").toStr() })
+)
+
+def handleGetVault(*serve.Context c) (
+    object vault = readVault(c.get("token").toStr())
+    if vault.ok != true (
+        answerFailure(c, vault)
+        return
+    )
+    object data = vault.data
+    if vault.uuid == "" or data.salt == null (
+        c.json(200, { ok: true, username: vault.username, setup: false })
+        return
+    )
+    c.json(200, {
+        "ok": true,
+        "username": vault.username,
+        "setup": true,
+        "salt": data.salt,
+        "verifier": data.verifier,
+        "iterations": data.iterations ?? 100000,
+        "entries": data.entries ?? []
+    })
+)
+
+def handleSetup(*serve.Context c) (
+    object body = c.bodyJSON() catch (
+        c.json(400, { ok: false, error: "That request wasn't valid." })
+        return
+    )
+    string salt = (body.salt ?? "").toStr()
+    string verifier = (body.verifier ?? "").toStr()
+    int iterations = (body.iterations ?? 100000).toNum().as<int>
+    if salt == "" or verifier == "" or iterations < 100000 (
+        c.json(400, { ok: false, error: "That request wasn't valid." })
+        return
+    )
+    string token = c.get("token").toStr()
+    object user = lookupUser(token)
+    if user.ok != true (
+        answerFailure(c, user)
+        return
+    )
+    object result = changeVault(token, user.username.toStr(), def(object vault, object data) -> (
+        if data.salt != null (
+            return "You already have a passcode. Unlock with it instead."
+        )
+        data.salt = salt
+        data.verifier = verifier
+        data.iterations = iterations
+        data.entries = []
+        return ""
+    ))
+    if result.ok != true (
+        answerFailure(c, result)
+        return
+    )
+    c.json(200, { ok: true })
+)
+
+def withVault(*serve.Context c, function change) (
+    string token = c.get("token").toStr()
+    object user = lookupUser(token)
+    if user.ok != true (
+        answerFailure(c, user)
+        return
+    )
+    object result = changeVault(token, user.username.toStr(), def(object vault, object data) -> (
+        if data.salt == null (
+            return "Set a passcode first."
+        )
+        return change(data)
+    ))
+    if result.ok != true (
+        answerFailure(c, result)
+        return
+    )
+    c.json(200, { ok: true })
+)
+
+// Adds a code, or replaces the one with the same id: an edit is one write, never a delete and an add.
+def handleSaveEntry(*serve.Context c) (
+    object entry = c.bodyJSON() catch (
+        c.json(400, { ok: false, error: "That code wasn't sent properly." })
+        return
+    )
+    if !isEncryptedEntry(entry) (
+        c.json(400, { ok: false, error: "That code wasn't sent properly." })
+        return
+    )
+    withVault(c, def(object data) -> (
+        data.entries = upsertEntry((data.entries ?? []).assert(array), entry)
+        return ""
+    ))
+)
+
+def handleImportEntries(*serve.Context c) (
+    object body = c.bodyJSON() catch (
+        c.json(400, { ok: false, error: "Those codes weren't sent properly." })
+        return
+    )
+    array incoming = (body.entries ?? []).assert(array) catch (
+        c.json(400, { ok: false, error: "Those codes weren't sent properly." })
+        return
+    )
+    for entry in incoming (
+        if typeof(entry) != "object" or !isEncryptedEntry(entry) (
+            c.json(400, { ok: false, error: "Those codes weren't sent properly." })
+            return
+        )
+    )
+    withVault(c, def(object data) -> (
+        array entries = (data.entries ?? []).assert(array)
+        for entry in incoming (
+            entries = upsertEntry(entries, entry)
+        )
+        data.entries = entries
+        return ""
+    ))
+)
+
+def handleDeleteEntry(*serve.Context c) (
+    string id = c.query("id") ?? ""
+    if id == "" (
+        c.json(400, { ok: false, error: "Say which code to delete." })
+        return
+    )
+    withVault(c, def(object data) -> (
+        data.entries = removeEntry((data.entries ?? []).assert(array), id)
+        return ""
+    ))
+)

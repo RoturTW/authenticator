@@ -42,10 +42,16 @@ window.TOTP = {
            (hmac[offset + 3] & 0xff);
   },
 
+  // otpauth:// links say SHA1, SHA256 or SHA512; WebCrypto wants SHA-1, SHA-256 or SHA-512.
+  normaliseAlgorithm(algorithm) {
+    const name = String(algorithm || 'SHA1').toUpperCase().replace(/^SHA-?/, 'SHA-');
+    return ['SHA-1', 'SHA-256', 'SHA-512'].includes(name) ? name : 'SHA-1';
+  },
+
   async generate(secretBase32, digits = 6, algorithm = 'SHA-1', period = 30) {
     const keyBytes = this.base32Decode(secretBase32);
     const counter = Math.floor(Date.now() / 1000 / period);
-    const hmac = await this.generateHMAC(keyBytes, counter, algorithm);
+    const hmac = await this.generateHMAC(keyBytes, counter, this.normaliseAlgorithm(algorithm));
     const code = this.dynamicTruncation(hmac) % Math.pow(10, digits);
     return code.toString().padStart(digits, '0');
   },
@@ -82,7 +88,7 @@ window.TOTP = {
         issuer: issuer || 'Unknown',
         name: name || 'Account',
         digits: parseInt(params.get('digits')) || 6,
-        algorithm: params.get('algorithm') || 'SHA-1',
+        algorithm: this.normaliseAlgorithm(params.get('algorithm')),
         period: parseInt(params.get('period')) || 30
       };
     } catch (e) {

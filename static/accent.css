@@ -1,0 +1,61 @@
+/* Accent derived from one colour. Load after the Rotur UI kit; scripts/accent.js sets
+ * --r-accent-base (and --r-on-accent) on the root. The same file as roturPhotos'
+ * src/accent/accent.css, written in the kit's r- naming so it can move into rotur/ui as is. */
+
+:root {
+  --r-accent-base: #c299cf;
+  --r-accent: var(--r-accent-base);
+  --r-accent-strong: color-mix(in srgb, var(--r-accent-base) 82%, #ffffff);
+  /* Light enough to read on black even when the base colour is dark. */
+  --r-accent-text: color-mix(in srgb, var(--r-accent-base) 68%, #ffffff);
+  --r-accent-soft: color-mix(in srgb, var(--r-accent-base) 8%, transparent);
+  --r-accent-line: color-mix(in srgb, var(--r-accent-base) 28%, transparent);
+  --r-surface-selected: color-mix(in srgb, var(--r-accent-base) 9%, #121212);
+  --r-focus: color-mix(in srgb, var(--r-accent-base) 72%, transparent);
+}
+
+/* Swatches: <div class="r-swatches" role="radiogroup"> of
+ * <button class="r-swatch" role="radio" aria-checked style="--swatch: #hex">,
+ * and a custom one: <label class="r-swatch r-swatch--custom" data-checked="true"><input type="color"></label> */
+.r-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.r-swatch {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  cursor: pointer;
+  transition: transform var(--r-duration) var(--r-ease);
+}
+.r-swatch:hover { transform: scale(1.08); }
+.r-swatch[aria-checked='true']::after,
+.r-swatch--custom[data-checked='true']::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 2px solid var(--r-text);
+  border-radius: 50%;
+}
+/* Shows the custom colour once there is one, otherwise an empty dashed ring. */
+.r-swatch--custom { background: var(--swatch, transparent); box-shadow: none; border: 1px dashed var(--r-line-strong); }
+.r-swatch--custom > svg { width: 14px; height: 14px; color: var(--r-text-muted); }
+.r-swatch--custom input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.r-swatch--custom:focus-within { outline: var(--r-focus-width) solid var(--r-focus); outline-offset: var(--r-focus-offset); }
+
+@media (prefers-reduced-motion: reduce) {
+  .r-swatch { transition: none; }
+  .r-swatch:hover { transform: none; }
+}

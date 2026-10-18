@@ -1,0 +1,233 @@
+import "std:requests"
+import "std:json"
+import "std:crypto"
+import "std:date"
+import "std:sync"
+import "std:url"
+
+// The vault is one JSON file in the person's Rotur files:
+// { salt, verifier, iterations, entries: [{ id, nonce, ciphertext }] }.
+// Entries are encrypted in the browser; this server never sees a secret or the passcode.
+
+string originBase = "https://api.rotur.dev"
+string vaultDirectory = "application data/authenticator@rotur"
+
+// Positions in a Rotur files entry as the API numbers them, from 0. OSL arrays and the
+// API's update idx both count from 1, so both add one.
+int DATA = 3
+int EDITED = 9
+int SIZE = 11
+int UUID = 13
+
+object usernames = {}
+int maxCachedUsernames = 1000
+
+def originGet(string token, string endpoint) object (
+    return requests.get(originBase ++ endpoint, { headers: { Authorization: "Bearer " ++ token } }) catch (
+        return { ok: false, status: 0, body: "" }
+    )
+)
+
+def originUpdate(string token, array updates) boolean (
+    object response = requests.post(originBase ++ "/files", {
+        headers: { Authorization: "Bearer " ++ token },
+        json: { updates: updates }
+    }) catch (
+        return false
+    )
+    return response.ok
+)
+
+def userRoot(string username) string (
+    return "origin/(c) users/" ++ username.toLower()
+)
+
+def vaultPath(string username) string (
+    return userRoot(username) ++ "/" ++ vaultDirectory ++ "/data.json"
+)
+
+def pathIndex(string token) object (
+    object response = originGet(token, "/files/path-index")
+    if !response.ok (
+        return { ok: false, status: response.status }
+    )
+    object parsed = json.parse(response.body.toStr(), { type: "object" }) catch (
+        return { ok: false, status: 502 }
+    )
+    if parsed.username == null or parsed.index == null (
+        return { ok: false, status: 502 }
+    )
+    return { ok: true, username: parsed.username.toStr(), index: parsed.index }
+)
+
+// A token belongs to one account for as long as it lives, so its username is cached
+// rather than fetched with the whole path index on every request. The cache is cleared
+// when full, so a stream of different tokens can't grow it without limit.
+def cachedUsername(string token) string (
+    string key = crypto.sha256(token)
+    return sync.withLock("usernames", def() -> (
+        return (usernames[key] ?? "").toStr()
+    )).assert(string)
+)
+
+def rememberUsername(string token, string username) (
+    string key = crypto.sha256(token)
+    void sync.withLock("usernames", def() -> (
+        if usernames.len >= maxCachedUsernames (
+            usernames = {}
+        )
+        usernames[key] = username
+    ))
+)
+
+def forgetUsername(string token) (
+    string key = crypto.sha256(token)
+    void sync.withLock("usernames", def() -> (
+        usernames.delete(key)
+    ))
+)
+
+// Who the token belongs to, checked with Rotur. status is 401 or 403 when Rotur refuses it.
+def lookupUser(string token) object (
+    string username = cachedUsername(token)
+    if username != "" (
+        return { ok: true, username: username }
+    )
+    object index = pathIndex(token)
+    if index.ok != true (
+        return index
+    )
+    rememberUsername(token, index.username.toStr())
+    return { ok: true, username: index.username.toStr() }
+)
+
+// Reads the vault. uuid is "" when the person hasn't made one yet.
+def readVault(string token) object (
+    object user = lookupUser(token)
+    if user.ok != true (
+        return user
+    )
+    string username = user.username.toStr()
+    string escaped = url.escape(vaultPath(username)).replace("+", "%20")
+    object response = originGet(token, "/files/by-path/" ++ escaped)
+    if response.status == 404 (
+        return { ok: true, username: username, uuid: "", data: {} }
+    )
+    if !response.ok (
+        if response.status == 401 or response.status == 403 (
+            forgetUsername(token)
+        )
+        return { ok: false, status: response.status }
+    )
+    array entry = json.parse(response.body.toStr(), { type: "array" }) catch (
+        return { ok: false, status: 502 }
+    )
+    if entry.len <= UUID (
+        return { ok: false, status: 502 }
+    )
+    object data = json.parse(entry[DATA + 1].toStr(), { type: "object" }) catch (
+        return { ok: false, status: 502 }
+    )
+    return { ok: true, username: username, uuid: entry[UUID + 1].toStr(), data: data }
+)
+
+def newFileUuid(string path) string (
+    return crypto.sha256(crypto.randomString(32) ++ path).trim(1, 32)
+)
+
+// Makes the folders above the vault that don't exist yet, as originOS would.
+def folderUpdates(string token, string username) object (
+    object index = pathIndex(token)
+    if index.ok != true (
+        return index
+    )
+    object existing = index.index.assert(object)
+    array updates = []
+    string location = userRoot(username)
+    int now = date.now().unix() * 1000
+    for part in vaultDirectory.split("/") (
+        string folder = location ++ "/" ++ part
+        if !existing.contains(folder ++ ".folder") (
+            string uuid = newFileUuid(folder)
+            void updates.append({ command: "UUIDa", uuid: uuid, dta: [".folder", part, location, [], null, 0, 0, now, now, now, "", 0, [], uuid] })
+        )
+        location = folder
+    )
+    return { ok: true, updates: updates }
+)
+
+def writeVault(string token, object vault, object data) boolean (
+    string body = data.toStr()
+    int now = date.now().unix() * 1000
+    string uuid = vault.uuid.toStr()
+    if uuid != "" (
+        return originUpdate(token, [
+            { command: "UUIDr", uuid: uuid, dta: body, idx: DATA + 1 },
+            { command: "UUIDr", uuid: uuid, dta: now, idx: EDITED + 1 },
+            { command: "UUIDr", uuid: uuid, dta: body.len, idx: SIZE + 1 }
+        ])
+    )
+    string username = vault.username.toStr()
+    object folders = folderUpdates(token, username)
+    if folders.ok != true (
+        return false
+    )
+    array updates = folders.updates
+    string location = userRoot(username) ++ "/" ++ vaultDirectory
+    uuid = newFileUuid(location)
+    void updates.append({ command: "UUIDa", uuid: uuid, dta: [".json", "data", location, body, null, 0, 0, now, now, now, "", body.len, [], uuid] })
+    return originUpdate(token, updates)
+)
+
+// Every change is read-modify-write of the whole file, so one person's changes take turns:
+// two at once (an edit on a phone while a laptop adds a code) would otherwise lose one.
+// change gets the vault's data and returns an error message, or "" to save it.
+def changeVault(string token, string username, function change) object (
+    return sync.withLock("vault:" ++ username, def() -> (
+        object vault = readVault(token)
+        if vault.ok != true (
+            return { ok: false, status: vault.status ?? 502, error: "Rotur's files didn't answer. Try again in a moment." }
+        )
+        object data = vault.data
+        string problem = change(vault, data).toStr()
+        if problem != "" (
+            return { ok: false, status: 400, error: problem }
+        )
+        if !writeVault(token, vault, data) (
+            return { ok: false, status: 502, error: "Rotur's files didn't save that. Try again in a moment." }
+        )
+        return { ok: true }
+    )).assert(object)
+)
+
+def isEncryptedEntry(object entry) boolean (
+    for key in ["id", "nonce", "ciphertext"] (
+        if typeof(entry[key]) != "string" or entry[key] == "" (
+            return false
+        )
+    )
+    return true
+)
+
+// Replaces the entry with the same id where it is, or adds it at the end.
+def upsertEntry(array entries, object entry) array (
+    object clean = { id: entry.id.toStr(), nonce: entry.nonce.toStr(), ciphertext: entry.ciphertext.toStr() }
+    for i entries.len (
+        if entries[i].id.toStr() == clean.id (
+            entries[i] = clean
+            return entries
+        )
+    )
+    void entries.append(clean)
+    return entries
+)
+
+def removeEntry(array entries, string id) array (
+    array remaining = []
+    for entry in entries (
+        if entry.id.toStr() != id (
+            void remaining.append(entry)
+        )
+    )
+    return remaining
+)

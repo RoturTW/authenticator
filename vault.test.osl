@@ -1,0 +1,39 @@
+import "std:testing"
+
+import "./vault.osl"
+
+array entries = [
+    { id: "a", nonce: "n1", ciphertext: "c1" },
+    { id: "b", nonce: "n2", ciphertext: "c2" }
+]
+
+// An edit replaces the code where it is, in the same write, so it can't be lost between a delete and an add.
+entries = upsertEntry(entries, { id: "a", nonce: "n3", ciphertext: "c3", extra: "dropped" })
+testing.equal(entries.len, 2)
+testing.equal(entries[1], { id: "a", nonce: "n3", ciphertext: "c3" })
+testing.equal(entries[2].id, "b")
+
+entries = upsertEntry(entries, { id: "c", nonce: "n4", ciphertext: "c4" })
+testing.equal(entries.len, 3)
+testing.equal(entries[3].id, "c")
+
+entries = removeEntry(entries, "b")
+testing.equal(entries.len, 2)
+testing.equal(entries[1].id, "a")
+testing.equal(entries[2].id, "c")
+testing.equal(removeEntry(entries, "missing").len, 2)
+
+testing.assert(isEncryptedEntry({ id: "a", nonce: "n", ciphertext: "c" }))
+testing.assert(!isEncryptedEntry({ id: "a", nonce: "n" }))
+testing.assert(!isEncryptedEntry({ nonce: "n", ciphertext: "c" }))
+
+maxCachedUsernames = 3
+for i 5 (
+    rememberUsername("token" ++ i.toStr(), "user" ++ i.toStr())
+    testing.assert(usernames.len <= maxCachedUsernames, "the username cache must stay bounded")
+)
+testing.equal(cachedUsername("token5"), "user5")
+forgetUsername("token5")
+testing.equal(cachedUsername("token5"), "")
+
+testing.equal(vaultPath("Mist"), "origin/(c) users/mist/application data/authenticator@rotur/data.json")

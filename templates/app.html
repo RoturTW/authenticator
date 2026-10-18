@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" data-user="{{ username }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <meta name="referrer" content="no-referrer">
+  <title>roturAuth</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="roturAuth">
+  <link rel="stylesheet" href="/static/rotur-ui/fonts.css">
+  <link rel="stylesheet" href="/static/rotur-ui/tokens.css">
+  <link rel="stylesheet" href="/static/rotur-ui/base.css">
+  <link rel="stylesheet" href="/static/rotur-ui/components.css">
+  <link rel="stylesheet" href="/static/accent.css">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/scripts/accent.js"></script>
+</head>
+<body>
+  <!-- Opening: the vault is being fetched. -->
+  <div class="screen screen--center" id="screen-loading" role="status">
+    <span class="r-spinner" aria-hidden="true"></span>
+    <p class="r-meta">Opening your codes</p>
+  </div>
+
+  <!-- Couldn't open the vault. -->
+  <div class="screen screen--center" id="screen-error" hidden>
+    <div class="r-empty">
+      <div class="r-empty__icon"><svg aria-hidden="true"><use id="error-icon" href="/static/icons.svg#circle-alert"/></svg></div>
+      <h1 class="r-empty__title" id="error-title"></h1>
+      <p class="r-empty__text" id="error-text"></p>
+      <button class="r-btn r-btn--primary" id="error-action" type="button"></button>
+    </div>
+  </div>
+
+  <!-- Choosing, confirming or entering the passcode. -->
+  <div class="screen screen--center passcode" id="screen-passcode" hidden>
+    <div class="passcode__head">
+      <h1 class="passcode__title" id="passcode-title"></h1>
+      <p class="passcode__hint" id="passcode-hint"></p>
+    </div>
+    <div class="passcode__dots" id="passcode-dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <p class="passcode__message" id="passcode-message" role="alert"></p>
+    <div class="numpad" id="numpad" role="group" aria-label="Passcode keypad">
+      <button type="button" data-digit="1">1</button>
+      <button type="button" data-digit="2">2</button>
+      <button type="button" data-digit="3">3</button>
+      <button type="button" data-digit="4">4</button>
+      <button type="button" data-digit="5">5</button>
+      <button type="button" data-digit="6">6</button>
+      <button type="button" data-digit="7">7</button>
+      <button type="button" data-digit="8">8</button>
+      <button type="button" data-digit="9">9</button>
+      <span></span>
+      <button type="button" data-digit="0">0</button>
+      <button type="button" class="numpad__erase" data-erase aria-label="Delete last digit"><svg aria-hidden="true"><use href="/static/icons.svg#delete"/></svg></button>
+    </div>
+    <p class="passcode__foot" id="passcode-foot"></p>
+  </div>
+
+  <!-- The codes. -->
+  <div class="screen" id="screen-codes" hidden>
+    <header class="r-topbar auth-topbar">
+      <a class="r-brand" href="/"><svg aria-hidden="true"><use href="/static/icons.svg#key-round"/></svg>roturAuth</a>
+      <div class="r-topbar__actions">
+        <button class="r-btn r-btn--primary r-btn--sm add-button" id="add-button" type="button" aria-label="Add code"><svg aria-hidden="true"><use href="/static/icons.svg#plus"/></svg><span>Add code</span></button>
+        <div class="account">
+          <button class="account__button" id="account-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="account-menu" aria-label="Account">
+            <img class="r-avatar r-avatar--sm" src="https://avatars.rotur.dev/{{ username }}" alt="">
+            <svg aria-hidden="true"><use href="/static/icons.svg#chevron-down"/></svg>
+          </button>
+          <div class="r-menu account__menu" id="account-menu" role="menu" hidden>
+            <p class="account__who">Signed in as <strong>{{ username }}</strong></p>
+            <button class="r-menu__item" role="menuitem" type="button" id="open-settings"><svg aria-hidden="true"><use href="/static/icons.svg#settings"/></svg>Settings</button>
+            <button class="r-menu__item" role="menuitem" type="button" id="lock"><svg aria-hidden="true"><use href="/static/icons.svg#lock"/></svg>Lock</button>
+            <div class="r-menu__sep" role="separator"></div>
+            <button class="r-menu__item" role="menuitem" type="button" id="sign-out"><svg aria-hidden="true"><use href="/static/icons.svg#log-out"/></svg>Sign out</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="codes">
+      <div class="r-alert offline-note" id="offline-note" role="status" hidden>
+        <svg aria-hidden="true"><use href="/static/icons.svg#wifi-off"/></svg>
+        <div class="r-alert__body">You're offline. Your codes still work; adding or changing them waits until you reconnect.</div>
+      </div>
+
+      <div class="codes__head">
+        <h1 class="r-display r-display--md">Codes</h1>
+        <p class="r-meta" id="code-count"></p>
+      </div>
+
+      <div class="r-input-wrap codes__search" id="search-wrap" hidden>
+        <svg aria-hidden="true"><use href="/static/icons.svg#search"/></svg>
+        <input class="r-input-bare" id="search" type="search" placeholder="Search" aria-label="Search your codes" autocomplete="off">
+      </div>
+
+      <ul class="r-list r-list--divided code-list" id="code-list"></ul>
+
+      <div class="r-empty" id="codes-state" hidden>
+        <div class="r-empty__icon"><svg aria-hidden="true"><use id="codes-state-icon" href="/static/icons.svg#key-round"/></svg></div>
+        <p class="r-empty__title" id="codes-state-title"></p>
+        <p class="r-empty__text" id="codes-state-text"></p>
+        <button class="r-btn r-btn--primary" id="codes-state-action" type="button" hidden></button>
+      </div>
+    </main>
+  </div>
+
+  <ul class="r-menu code-menu" id="code-menu" role="menu" hidden>
+    <li role="none"><button class="r-menu__item" role="menuitem" type="button" id="menu-copy"><svg aria-hidden="true"><use href="/static/icons.svg#copy"/></svg>Copy code</button></li>
+    <li role="none"><button class="r-menu__item" role="menuitem" type="button" id="menu-edit"><svg aria-hidden="true"><use href="/static/icons.svg#pencil"/></svg>Rename</button></li>
+    <li class="r-menu__sep" role="separator"></li>
+    <li role="none"><button class="r-menu__item r-menu__item--danger" role="menuitem" type="button" id="menu-delete"><svg aria-hidden="true"><use href="/static/icons.svg#trash-2"/></svg>Delete</button></li>
+  </ul>
+
+  <div class="r-backdrop" id="add-dialog" hidden>
+    <div class="r-modal add" role="dialog" aria-modal="true" aria-labelledby="add-title">
+      <div class="r-modal__header">
+        <h2 class="r-heading" id="add-title">Add a code</h2>
+        <button class="r-icon-btn r-icon-btn--sm" type="button" data-close aria-label="Close"><svg aria-hidden="true"><use href="/static/icons.svg#x"/></svg></button>
+      </div>
+      <div class="r-modal__body">
+        <div class="add__ways" role="tablist" aria-label="How to add it">
+          <button class="add__way" role="tab" type="button" id="way-scan" aria-controls="panel-scan" aria-selected="true"><svg aria-hidden="true"><use href="/static/icons.svg#scan-line"/></svg>Scan</button>
+          <button class="add__way" role="tab" type="button" id="way-image" aria-controls="panel-image" aria-selected="false"><svg aria-hidden="true"><use href="/static/icons.svg#image"/></svg>Image</button>
+          <button class="add__way" role="tab" type="button" id="way-key" aria-controls="panel-key" aria-selected="false"><svg aria-hidden="true"><use href="/static/icons.svg#keyboard"/></svg>Enter key</button>
+        </div>
+
+        <div class="add__panel" id="panel-scan" role="tabpanel" aria-labelledby="way-scan">
+          <div class="scanner" id="scanner"></div>
+          <p class="r-hint" id="scan-hint">Point your camera at the QR code the site shows when you turn on two-factor sign-in.</p>
+        </div>
+
+        <div class="add__panel" id="panel-image" role="tabpanel" aria-labelledby="way-image" hidden>
+          <label class="drop" id="drop">
+            <input type="file" id="qr-file" accept="image/*">
+            <svg aria-hidden="true"><use href="/static/icons.svg#upload"/></svg>
+            <strong>Choose a screenshot of the QR code</strong>
+            <span>Or drop it here.</span>
+          </label>
+        </div>
+
+        <form class="add__panel key-form" id="panel-key" role="tabpanel" aria-labelledby="way-key" novalidate hidden>
+          <div class="r-field">
+            <label class="r-label" for="key-issuer">Service</label>
+            <input class="r-input" id="key-issuer" placeholder="GitHub" autocomplete="off" maxlength="80">
+          </div>
+          <div class="r-field">
+            <label class="r-label" for="key-name">Account <span class="r-meta">(optional)</span></label>
+            <input class="r-input" id="key-name" placeholder="you@example.com" autocomplete="off" maxlength="120">
+          </div>
+          <div class="r-field">
+            <label class="r-label" for="key-secret">Setup key</label>
+            <input class="r-input key-form__secret" id="key-secret" placeholder="JBSW Y3DP EHPK 3PXP" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="key-secret-hint">
+            <p class="r-hint" id="key-secret-hint">The letters and numbers shown under the QR code.</p>
+          </div>
+          <details class="key-form__more">
+            <summary>Advanced</summary>
+            <div class="key-form__row">
+              <div class="r-field">
+                <label class="r-label" for="key-digits">Digits</label>
+                <select class="r-select" id="key-digits"><option>6</option><option>8</option></select>
+              </div>
+              <div class="r-field">
+                <label class="r-label" for="key-period">Every</label>
+                <select class="r-select" id="key-period"><option value="30">30 seconds</option><option value="60">60 seconds</option></select>
+              </div>
+              <div class="r-field">
+                <label class="r-label" for="key-algorithm">Algorithm</label>
+                <select class="r-select" id="key-algorithm"><option>SHA-1</option><option>SHA-256</option><option>SHA-512</option></select>
+              </div>
+            </div>
+          </details>
+          <p class="r-error" id="key-error" role="alert" hidden></p>
+          <div class="key-form__actions">
+            <button class="r-btn r-btn--primary" type="submit" id="key-submit">Add code</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="r-backdrop" id="edit-dialog" hidden>
+    <form class="r-modal" role="dialog" aria-modal="true" aria-labelledby="edit-title" novalidate>
+      <div class="r-modal__header">
+        <h2 class="r-heading" id="edit-title">Rename</h2>
+        <button class="r-icon-btn r-icon-btn--sm" type="button" data-close aria-label="Close"><svg aria-hidden="true"><use href="/static/icons.svg#x"/></svg></button>
+      </div>
+      <div class="r-modal__body edit">
+        <div class="r-field">
+          <label class="r-label" for="edit-issuer">Service</label>
+          <input class="r-input" id="edit-issuer" autocomplete="off" maxlength="80">
+        </div>
+        <div class="r-field">
+          <label class="r-label" for="edit-name">Account <span class="r-meta">(optional)</span></label>
+          <input class="r-input" id="edit-name" autocomplete="off" maxlength="120">
+        </div>
+        <p class="r-error" id="edit-error" role="alert" hidden></p>
+      </div>
+      <div class="r-modal__footer">
+        <button class="r-btn r-btn--ghost" type="button" data-close>Cancel</button>
+        <button class="r-btn r-btn--primary" type="submit" id="edit-submit">Save</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="r-backdrop" id="delete-dialog" hidden>
+    <div class="r-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-title" aria-describedby="delete-text">
+      <div class="r-modal__header">
+        <h2 class="r-heading" id="delete-title"></h2>
+        <button class="r-icon-btn r-icon-btn--sm" type="button" data-close aria-label="Close"><svg aria-hidden="true"><use href="/static/icons.svg#x"/></svg></button>
+      </div>
+      <div class="r-modal__body">
+        <p class="dialog-text" id="delete-text"></p>
+      </div>
+      <div class="r-modal__footer">
+        <button class="r-btn r-btn--ghost" type="button" data-close>Keep it</button>
+        <button class="r-btn r-btn--danger" type="button" id="delete-submit">Delete code</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="r-backdrop" id="settings-dialog" hidden>
+    <div class="r-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="r-modal__header">
+        <h2 class="r-heading" id="settings-title">Settings</h2>
+        <button class="r-icon-btn r-icon-btn--sm" type="button" data-close aria-label="Close"><svg aria-hidden="true"><use href="/static/icons.svg#x"/></svg></button>
+      </div>
+      <div class="r-modal__body settings">
+        <section class="settings__section">
+          <h3 class="r-label" id="colour-label">Colour</h3>
+          <p class="r-hint">Just for you, on this browser.</p>
+          <div class="r-swatches" id="swatches" role="radiogroup" aria-labelledby="colour-label"></div>
+        </section>
+        <section class="settings__section">
+          <h3 class="r-label">Backup</h3>
+          <p class="r-hint">A backup file isn't encrypted: anyone who has it can make your codes. Keep it somewhere only you can open.</p>
+          <div class="settings__actions">
+            <button class="r-btn r-btn--secondary r-btn--sm" type="button" id="backup"><svg aria-hidden="true"><use href="/static/icons.svg#download"/></svg>Download backup</button>
+            <label class="r-btn r-btn--ghost r-btn--sm restore"><svg aria-hidden="true"><use href="/static/icons.svg#upload"/></svg>Restore from backup<input type="file" id="restore-file" accept="application/json,.json"></label>
+          </div>
+        </section>
+        <section class="settings__section">
+          <h3 class="r-label">Account</h3>
+          <div class="r-row settings__account">
+            <img class="r-avatar" src="https://avatars.rotur.dev/{{ username }}" alt="">
+            <div class="r-row__body">
+              <span class="r-row__title">@{{ username }}</span>
+              <span class="r-row__sub">Your codes are kept in your Rotur files, encrypted with your passcode.</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="r-toast-region" id="toasts" role="status" aria-live="polite"></div>
+
+  <script src="/static/vendor/html5-qrcode-2.3.8.min.js" defer></script>
+  <script src="/static/scripts/totp.js"></script>
+  <script src="/static/scripts/app.js"></script>
+</body>
+</html>

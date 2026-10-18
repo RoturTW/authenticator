@@ -91,8 +91,8 @@ function showOpenError(error) {
   $('error-icon').setAttribute('href', `/static/icons.svg#${offline ? 'wifi-off' : 'circle-alert'}`);
   $('error-title').textContent = refused ? 'Sign in again' : "Couldn't open your codes";
   $('error-text').textContent = refused
-    ? `${error.message.replace(/ Sign in again.*$/, '')} Your codes are safe in your Rotur files.`
-    : `${error.message} Your codes are safe in your Rotur files.`;
+    ? "Rotur didn't let roturAuth open your files. Your codes are still there."
+    : `${error.message} Your codes are still there.`;
   $('error-action').textContent = refused ? 'Sign in again' : 'Try again';
   $('error-action').onclick = refused ? signOut : open;
   show('screen-error');
@@ -214,6 +214,7 @@ function lock() {
   closeMenus();
   for (const id of dialogs) if (!$(id).hidden) closeDialog(id);
   stopScanner();
+  state.vault.entries = state.codes.map((c) => c.encrypted);
   state.key = null;
   state.codes = [];
   $('code-list').replaceChildren();

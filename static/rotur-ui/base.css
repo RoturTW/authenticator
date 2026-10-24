@@ -27,12 +27,12 @@ img, video { max-width: 100%; }
 [hidden] { display: none !important; }
 
 a { color: var(--r-accent-text); text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
-a:hover { color: var(--r-accent-strong); }
+@media (hover: hover) { a:hover { color: var(--r-accent-strong); } }
 
 code, kbd, samp, pre { font-family: var(--r-font-mono); font-size: 0.92em; }
 
 ::placeholder { color: var(--r-text-faint); opacity: 1; }
-::selection { background: rgb(194 153 207 / 0.32); color: var(--r-text); }
+::selection { background: color-mix(in srgb, var(--r-accent) 32%, transparent); color: var(--r-text); }
 
 /* One focus style for everything reached by keyboard. Mouse clicks don't draw it. */
 :focus-visible {
@@ -47,7 +47,7 @@ code, kbd, samp, pre { font-family: var(--r-font-mono); font-size: 0.92em; }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #2a2a2a; border: 3px solid transparent; border-radius: 99px; background-clip: padding-box; }
-  ::-webkit-scrollbar-thumb:hover { background-color: #3a3a3a; }
+  @media (hover: hover) { ::-webkit-scrollbar-thumb:hover { background-color: #3a3a3a; } }
 }
 
 .r-visually-hidden {

@@ -1,6 +1,6 @@
 /* Rotur UI tokens. Custom properties only, so this file is safe to load anywhere.
  * The look comes from notes.rotur.dev: pure black, soft panels, hairline borders,
- * one lilac accent used sparingly, Poppins for the UI and Cal Sans for display. */
+ * one accent used sparingly (lilac unless the app sets its own), Poppins for the UI and Cal Sans for display. */
 
 :root {
   color-scheme: dark;
@@ -10,9 +10,9 @@
   --r-surface: #101010;          /* panels, cards, modals */
   --r-surface-hover: #191919;    /* hover on panels, cards and buttons */
   --r-surface-hover-quiet: #121212; /* hover on rows, nav items and menu items over black */
-  --r-surface-selected: #1f1a21; /* the current nav item or row: a hint of lilac */
+  --r-surface-selected: color-mix(in srgb, var(--r-accent-base) 8%, #121212); /* the current nav item or row: a hint of the accent */
   --r-surface-raised: #141414;   /* menus and popovers that float over panels */
-  --r-scrim: rgb(0 0 0 / 0.78);  /* behind modals; heavy enough that the page reads as texture */
+  --r-scrim: rgb(0 0 0 / 0.84);  /* behind modals; heavy enough that the page reads as texture */
 
   /* Lines */
   --r-line: #222222;
@@ -24,12 +24,15 @@
   --r-text-muted: #a6a6af;
   --r-text-faint: #85858e;
 
-  /* The one accent */
-  --r-accent: #c299cf;
-  --r-accent-strong: #d1acdc;    /* primary button hover */
-  --r-accent-text: #d7b5e1;      /* accent-coloured text and links */
-  --r-accent-soft: #c299cf12;    /* tinted backgrounds */
-  --r-accent-line: #c299cf40;    /* tinted borders */
+  /* The one accent. Apps set --r-accent-base (one hex) and every other accent
+   * token follows it; colour.js also sets --r-on-accent to whatever reads on it.
+   * Override a derived token after this file only when a colour needs a hand. */
+  --r-accent-base: #c299cf;
+  --r-accent: var(--r-accent-base);
+  --r-accent-strong: color-mix(in srgb, var(--r-accent-base) 80%, #ffffff); /* primary button hover */
+  --r-accent-text: color-mix(in srgb, var(--r-accent-base) 68%, #ffffff);   /* accent text and links, readable on black */
+  --r-accent-soft: color-mix(in srgb, var(--r-accent-base) 7%, transparent); /* tinted backgrounds */
+  --r-accent-line: color-mix(in srgb, var(--r-accent-base) 25%, transparent); /* tinted borders */
   --r-on-accent: #1b1120;        /* text on an accent fill */
 
   /* Status */
@@ -42,7 +45,7 @@
   --r-success-line: #1d4029;
 
   /* Focus: visible, but quiet enough not to double up inside framed controls */
-  --r-focus: rgb(194 153 207 / 0.72);
+  --r-focus: color-mix(in srgb, var(--r-accent-base) 72%, transparent);
   --r-focus-width: 2px;
   --r-focus-offset: 2px;
 

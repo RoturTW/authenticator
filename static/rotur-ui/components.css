@@ -1,7 +1,9 @@
 /* Rotur UI components. Needs tokens.css and base.css.
  * Every class starts with r-. Modifiers use --, parts use __.
  * State comes from real attributes where one exists (disabled, aria-selected,
- * aria-current, aria-invalid, aria-busy) so markup and styling can't drift apart. */
+ * aria-current, aria-invalid, aria-busy) so markup and styling can't drift apart.
+ * A tap leaves :hover on until the next tap elsewhere, so hover styles sit in
+ * @media (hover: hover) and state selectors stay outside it to show on touch too. */
 
 /* ---------- Type ---------- */
 
@@ -73,19 +75,19 @@
 }
 .r-btn > svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .r-btn .r-kbd { margin-left: var(--r-space-1); color: inherit; border-color: color-mix(in srgb, currentColor 28%, transparent); opacity: 0.8; }
-.r-btn:hover { color: var(--r-text); }
+@media (hover: hover) { .r-btn:hover { color: var(--r-text); } }
 
 .r-btn--primary { background: var(--r-accent); border-color: var(--r-accent); color: var(--r-on-accent); font-weight: 600; }
-.r-btn--primary:hover { background: var(--r-accent-strong); border-color: var(--r-accent-strong); color: var(--r-on-accent); }
+@media (hover: hover) { .r-btn--primary:hover { background: var(--r-accent-strong); border-color: var(--r-accent-strong); color: var(--r-on-accent); } }
 
 .r-btn--secondary { border-color: var(--r-line); }
-.r-btn--secondary:hover { background: var(--r-surface-hover); border-color: var(--r-line-strong); }
+@media (hover: hover) { .r-btn--secondary:hover { background: var(--r-surface-hover); border-color: var(--r-line-strong); } }
 
 .r-btn--ghost { color: var(--r-text-muted); }
-.r-btn--ghost:hover { background: var(--r-surface-hover); }
+@media (hover: hover) { .r-btn--ghost:hover { background: var(--r-surface-hover); } }
 
 .r-btn--danger { color: var(--r-danger); border-color: var(--r-danger-line); }
-.r-btn--danger:hover { color: var(--r-danger-text); background: var(--r-danger-soft); border-color: var(--r-danger-line); }
+@media (hover: hover) { .r-btn--danger:hover { color: var(--r-danger-text); background: var(--r-danger-soft); border-color: var(--r-danger-line); } }
 
 .r-btn--sm { min-height: var(--r-control-sm); padding: 0 11px; border-radius: var(--r-radius-md); font-size: var(--r-text-sm); }
 .r-btn--sm > svg { width: 14px; height: 14px; }
@@ -110,10 +112,11 @@
   transition: background-color var(--r-duration) var(--r-ease), color var(--r-duration) var(--r-ease);
 }
 .r-icon-btn > svg { width: 18px; height: 18px; }
-.r-icon-btn:hover, .r-icon-btn[aria-expanded='true'] { color: var(--r-text); background: var(--r-surface-hover); }
+.r-icon-btn[aria-expanded='true'] { color: var(--r-text); background: var(--r-surface-hover); }
+@media (hover: hover) { .r-icon-btn:hover { color: var(--r-text); background: var(--r-surface-hover); } }
 .r-icon-btn--sm { width: 30px; height: 30px; border-radius: var(--r-radius-sm); }
 .r-icon-btn--sm > svg { width: 16px; height: 16px; }
-.r-icon-btn--danger:hover { color: var(--r-danger); background: var(--r-danger-soft); }
+@media (hover: hover) { .r-icon-btn--danger:hover { color: var(--r-danger); background: var(--r-danger-soft); } }
 .r-icon-btn:disabled { opacity: 0.4; pointer-events: none; }
 
 /* Text-only action, for "Manage", "Clear" and similar */
@@ -128,9 +131,9 @@
   text-underline-offset: 0.2em;
   transition: color var(--r-duration) var(--r-ease), text-decoration-color var(--r-duration) var(--r-ease);
 }
-.r-link-btn:hover { color: var(--r-text); text-decoration-color: currentColor; }
+@media (hover: hover) { .r-link-btn:hover { color: var(--r-text); text-decoration-color: currentColor; } }
 .r-link-btn--danger { color: var(--r-danger); }
-.r-link-btn--danger:hover { color: var(--r-danger-text); }
+@media (hover: hover) { .r-link-btn--danger:hover { color: var(--r-danger-text); } }
 
 .r-spinner {
   display: inline-block;
@@ -165,7 +168,7 @@
 }
 .r-textarea { display: block; min-height: 96px; padding: 10px 12px; line-height: 1.6; resize: vertical; }
 .r-input--sm { min-height: var(--r-control-sm); padding: 0 10px; font-size: var(--r-text-sm); border-radius: var(--r-radius-sm); }
-.r-input:hover, .r-textarea:hover, .r-select:hover { border-color: var(--r-line-strong); }
+@media (hover: hover) { .r-input:hover, .r-textarea:hover, .r-select:hover { border-color: var(--r-line-strong); } }
 /* Text fields show focus with their own border, not a second ring around it. */
 .r-input:focus-visible, .r-textarea:focus-visible, .r-select:focus-visible,
 .r-input:focus, .r-textarea:focus, .r-select:focus { outline: none; border-color: var(--r-focus); }
@@ -202,7 +205,7 @@
   transition: border-color var(--r-duration) var(--r-ease);
 }
 .r-input-wrap > svg { width: 16px; height: 16px; flex: 0 0 auto; }
-.r-input-wrap:hover { border-color: var(--r-line-strong); }
+@media (hover: hover) { .r-input-wrap:hover { border-color: var(--r-line-strong); } }
 .r-input-wrap:focus-within { border-color: var(--r-focus); }
 button.r-input-wrap:focus-visible { outline: none; border-color: var(--r-focus); }
 .r-input-wrap > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -237,7 +240,7 @@ button.r-input-wrap:focus-visible { outline: none; border-color: var(--r-focus);
   transition: background-color var(--r-duration) var(--r-ease), border-color var(--r-duration) var(--r-ease);
 }
 .r-check input[type='radio'] { border-radius: 50%; }
-.r-check:hover input:not(:disabled) { border-color: #4a4a4a; }
+@media (hover: hover) { .r-check:hover input:not(:disabled) { border-color: #4a4a4a; } }
 .r-check input:checked { background: var(--r-accent); border-color: var(--r-accent); }
 .r-check input[type='checkbox']:checked::after {
   content: '';
@@ -295,7 +298,7 @@ button.r-input-wrap:focus-visible { outline: none; border-color: var(--r-focus);
   text-decoration: none;
 }
 a.r-card, button.r-card { transition: background-color var(--r-duration) var(--r-ease); }
-a.r-card:hover, button.r-card:hover { background: var(--r-surface-hover); color: var(--r-text); }
+@media (hover: hover) { a.r-card:hover, button.r-card:hover { background: var(--r-surface-hover); color: var(--r-text); } }
 .r-card__title { margin: 0; font-family: var(--r-font-display); font-weight: 400; font-size: var(--r-display-xs); line-height: 1.2; letter-spacing: -0.02em; }
 .r-card__text { margin: 0; color: var(--r-text-muted); font-size: var(--r-text-md); line-height: 1.75; }
 .r-card__foot { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--r-space-3); margin-top: auto; }
@@ -328,7 +331,7 @@ a.r-card:hover, button.r-card:hover { background: var(--r-surface-hover); color:
   text-decoration: none;
 }
 a.r-row, button.r-row { transition: background-color var(--r-duration) var(--r-ease); }
-a.r-row:hover, button.r-row:hover { background: var(--r-surface-hover-quiet); color: var(--r-text); }
+@media (hover: hover) { a.r-row:hover, button.r-row:hover { background: var(--r-surface-hover-quiet); color: var(--r-text); } }
 .r-row[aria-current]:not([aria-current='false']), .r-row[aria-selected='true'], .r-row.is-selected { background: var(--r-surface-selected); }
 .r-row[aria-current]:not([aria-current='false']) .r-row__icon, .r-row[aria-selected='true'] .r-row__icon, .r-row.is-selected .r-row__icon { color: var(--r-accent); }
 .r-row__icon { display: grid; place-items: center; width: 20px; height: 20px; flex: 0 0 auto; color: var(--r-text-faint); }
@@ -371,7 +374,7 @@ a.r-row:hover, button.r-row:hover { background: var(--r-surface-hover-quiet); co
   white-space: nowrap;
 }
 .r-brand > svg { width: 22px; height: 22px; flex: 0 0 auto; }
-.r-brand:hover { color: var(--r-text); }
+@media (hover: hover) { .r-brand:hover { color: var(--r-text); } }
 
 .r-sidenav {
   display: flex;
@@ -405,13 +408,22 @@ a.r-row:hover, button.r-row:hover { background: var(--r-surface-hover-quiet); co
 }
 .r-nav-item > svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .r-nav-item > span:not(.r-nav-item__meta) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.r-nav-item:hover { color: var(--r-text); background: var(--r-surface-hover-quiet); }
+@media (hover: hover) { .r-nav-item:hover { color: var(--r-text); background: var(--r-surface-hover-quiet); } }
 .r-nav-item[aria-current]:not([aria-current='false']), .r-nav-item.is-active { color: var(--r-text); background: var(--r-surface-selected); }
 .r-nav-item[aria-current]:not([aria-current='false']) > svg, .r-nav-item.is-active > svg { color: var(--r-accent); }
 .r-nav-item__meta { margin-left: auto; color: var(--r-text-faint); font-size: var(--r-text-xs); font-variant-numeric: tabular-nums; }
 
 /* Tabs: role="tablist" on .r-tabs, role="tab" + aria-selected on each .r-tab */
-.r-tabs { display: flex; gap: var(--r-space-5); border-bottom: 1px solid var(--r-line); overflow-x: auto; }
+.r-tabs {
+  display: flex;
+  gap: var(--r-space-5);
+  border-bottom: 1px solid var(--r-line);
+  /* A row of tabs only ever scrolls sideways. overflow-x alone makes the
+     other axis scrollable too, so the tab bar could be dragged up and down. */
+  overflow: auto hidden;
+  scrollbar-width: none;
+}
+.r-tabs::-webkit-scrollbar { display: none; }
 .r-tab {
   position: relative;
   display: inline-flex;
@@ -427,13 +439,13 @@ a.r-row:hover, button.r-row:hover { background: var(--r-surface-hover-quiet); co
   text-decoration: none;
   transition: color var(--r-duration) var(--r-ease);
 }
-.r-tab:hover { color: var(--r-text); }
+@media (hover: hover) { .r-tab:hover { color: var(--r-text); } }
 .r-tab[aria-selected='true'], .r-tab[aria-current]:not([aria-current='false']) { color: var(--r-text); }
 .r-tab[aria-selected='true']::after, .r-tab[aria-current]:not([aria-current='false'])::after {
   content: '';
   position: absolute;
   right: 0;
-  bottom: -1px;
+  bottom: 0;
   left: 0;
   height: 2px;
   border-radius: 2px;
@@ -457,7 +469,7 @@ a.r-row:hover, button.r-row:hover { background: var(--r-surface-hover-quiet); co
   font-weight: 500;
   transition: background-color var(--r-duration) var(--r-ease), color var(--r-duration) var(--r-ease);
 }
-.r-segmented > button:hover { color: var(--r-text); }
+@media (hover: hover) { .r-segmented > button:hover { color: var(--r-text); } }
 .r-segmented > button[aria-pressed='true'], .r-segmented > button[aria-checked='true'] { color: var(--r-text); background: #222; }
 .r-segmented > button > svg { width: 13px; height: 13px; }
 .r-segmented > button:focus-visible { outline-offset: 0; }
@@ -498,9 +510,9 @@ a.r-row:hover, button.r-row:hover { background: var(--r-surface-hover-quiet); co
   transition: background-color var(--r-duration) var(--r-ease), border-color var(--r-duration) var(--r-ease), color var(--r-duration) var(--r-ease);
 }
 .r-chip > svg { width: 12px; height: 12px; color: var(--r-text-muted); }
-button.r-chip:hover { background: #262626; border-color: #444; }
+@media (hover: hover) { button.r-chip:hover { background: #262626; border-color: #444; } }
 .r-chip--dashed { border-style: dashed; background: transparent; color: var(--r-text-muted); }
-button.r-chip--dashed:hover { border-style: solid; color: var(--r-text); background: var(--r-surface-hover); }
+@media (hover: hover) { button.r-chip--dashed:hover { border-style: solid; color: var(--r-text); background: var(--r-surface-hover); } }
 
 /* ---------- Feedback ---------- */
 
@@ -520,7 +532,7 @@ button.r-chip--dashed:hover { border-style: solid; color: var(--r-text); backgro
 .r-alert--danger { border-color: var(--r-danger-line); background: var(--r-danger-soft); color: var(--r-danger-text); }
 .r-alert--success { border-color: var(--r-success-line); background: var(--r-success-soft); color: #a7f0c2; }
 .r-alert .r-icon-btn { width: 24px; height: 24px; margin: -2px -4px -2px 0; color: inherit; }
-.r-alert .r-icon-btn:hover { background: rgb(255 255 255 / 0.06); }
+@media (hover: hover) { .r-alert .r-icon-btn:hover { background: rgb(255 255 255 / 0.06); } }
 
 /* Toasts: put role="status" (or role="alert" for errors) on the region */
 .r-toast-region {
@@ -580,8 +592,9 @@ button.r-chip--dashed:hover { border-style: solid; color: var(--r-text); backgro
   place-items: center;
   padding: var(--r-space-5);
   background: var(--r-scrim);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
+  /* Enough blur that the page reads as texture behind a modal, not as faint text to squint at. */
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   animation: r-fade 140ms var(--r-ease);
 }
 .r-backdrop--top { place-items: start center; padding-top: 13vh; }
@@ -636,11 +649,14 @@ button.r-chip--dashed:hover { border-style: solid; color: var(--r-text); backgro
   color: var(--r-text-muted);
   font-size: var(--r-text-sm);
   text-align: left;
+  text-decoration: none;
 }
 .r-menu__item > svg { width: 15px; height: 15px; flex: 0 0 auto; }
-.r-menu__item:hover, .r-menu__item[aria-selected='true'] { color: var(--r-text); background: var(--r-surface-hover); }
+.r-menu__item[aria-selected='true'] { color: var(--r-text); background: var(--r-surface-hover); }
+@media (hover: hover) { .r-menu__item:hover { color: var(--r-text); background: var(--r-surface-hover); } }
 .r-menu__item:focus-visible { outline-offset: -2px; }
-.r-menu__item--danger, .r-menu__item--danger:hover { color: var(--r-danger); }
+.r-menu__item--danger { color: var(--r-danger); }
+@media (hover: hover) { .r-menu__item--danger:hover { color: var(--r-danger); } }
 .r-menu__item:disabled { opacity: 0.45; }
 .r-menu__sep { height: 1px; margin: 5px -5px; background: var(--r-line); }
 
@@ -675,7 +691,7 @@ button.r-chip--dashed:hover { border-style: solid; color: var(--r-text); backgro
   color: var(--r-text);
   text-align: left;
 }
-.r-spotlight__item:hover { background: #151515; }
+@media (hover: hover) { .r-spotlight__item:hover { background: #151515; } }
 .r-spotlight__item[aria-selected='true'] { background: var(--r-surface-hover); }
 .r-spotlight__item:focus-visible { outline-offset: -2px; }
 .r-spotlight__item > svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--r-text-faint); }
@@ -687,6 +703,74 @@ button.r-chip--dashed:hover { border-style: solid; color: var(--r-text); backgro
 .r-spotlight__empty { margin: 0; padding: 32px 12px; color: var(--r-text-faint); font-size: var(--r-text-sm); text-align: center; }
 .r-spotlight__footer { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 10px 18px; border-top: 1px solid var(--r-line-soft); color: var(--r-text-faint); font-size: var(--r-text-xs); }
 .r-spotlight__footer > span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ---------- Colour swatches ---------- */
+
+/* A row of colours to choose from. <r-colour-picker> (colour/colour.js) draws
+ * this markup and handles the keys; it can also be written by hand:
+ *   <div class="r-swatches" role="radiogroup" aria-label="Colour">
+ *     <button class="r-swatch" role="radio" aria-checked="true" style="--swatch: #ff8a80"></button>
+ *     <label class="r-swatch r-swatch--custom" data-checked="false"><input type="color"></label>
+ *   </div>
+ * --sm is 24px, --lg 40px; --square suits things that are squares, like pixels. */
+r-colour-picker { display: block; }
+.r-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.r-swatches--sm { gap: 8px; }
+.r-swatch {
+  --r-swatch-size: 32px;
+  --r-swatch-radius: 50%;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--r-swatch-size);
+  height: var(--r-swatch-size);
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-swatch-radius);
+  background: var(--swatch, transparent);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+  color: var(--r-text-muted);
+  cursor: pointer;
+  transition: transform var(--r-duration) var(--r-ease);
+}
+.r-swatches--sm .r-swatch, .r-swatch--sm { --r-swatch-size: 24px; }
+.r-swatches--lg .r-swatch, .r-swatch--lg { --r-swatch-size: 40px; }
+.r-swatches--square .r-swatch, .r-swatch--square { --r-swatch-radius: 7px; }
+.r-swatches--square.r-swatches--sm .r-swatch, .r-swatch--square.r-swatch--sm { --r-swatch-radius: 5px; }
+@media (hover: hover) { .r-swatch:hover { transform: scale(1.08); } }
+/* The chosen one gets a ring a little outside it, in the text colour, so it
+ * shows on every colour including the accent. */
+.r-swatch[aria-checked='true']::after,
+.r-swatch[aria-pressed='true']::after,
+.r-swatch--custom[data-checked='true']::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 2px solid var(--r-text);
+  border-radius: calc(var(--r-swatch-radius) + 4px);
+  pointer-events: none;
+}
+.r-swatch--square[aria-checked='true']::after, .r-swatches--square .r-swatch[aria-checked='true']::after,
+.r-swatch--square[aria-pressed='true']::after, .r-swatches--square .r-swatch[aria-pressed='true']::after { border-radius: calc(var(--r-swatch-radius) + 3px); }
+.r-swatch:focus-visible { outline-offset: 5px; }
+/* The custom colour: an empty dashed ring with a plus until there is one. */
+.r-swatch--custom { box-shadow: none; border: 1px dashed var(--r-line-strong); }
+.r-swatch--custom[data-checked='true'] { border-style: solid; border-color: transparent; }
+.r-swatch--custom > svg { width: 14px; height: 14px; pointer-events: none; }
+.r-swatch--custom input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.r-swatch--custom:focus-within { outline: var(--r-focus-width) solid var(--r-focus); outline-offset: 5px; }
+.r-swatch--custom:has(input:focus:not(:focus-visible)) { outline: none; }
 
 /* ---------- App sign-in screen ---------- */
 
@@ -701,9 +785,13 @@ button.r-chip--dashed:hover { border-style: solid; color: var(--r-text); backgro
 .r-signin__error { margin: var(--r-space-4) 0 0; color: var(--r-danger); font-size: var(--r-text-sm); }
 .r-signin__footer { padding: var(--r-space-6) 0; color: var(--r-text-faint); font-size: var(--r-text-sm); }
 .r-signin__footer a, .r-signin__header a:not(.r-brand):not(.r-btn) { color: var(--r-text-muted); text-decoration: none; }
-.r-signin__footer a:hover, .r-signin__header a:not(.r-brand):not(.r-btn):hover { color: var(--r-text); }
+@media (hover: hover) { .r-signin__footer a:hover, .r-signin__header a:not(.r-brand):not(.r-btn):hover { color: var(--r-text); } }
 
 /* ---------- Small screens ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .r-swatch:hover { transform: none; }
+}
 
 @media (max-width: 760px) {
   .r-topbar { padding: 0 var(--r-space-3); gap: var(--r-space-3); }
